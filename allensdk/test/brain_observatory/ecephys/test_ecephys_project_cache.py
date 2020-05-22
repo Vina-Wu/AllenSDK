@@ -11,7 +11,7 @@ import pynwb
 import allensdk.brain_observatory.ecephys.ecephys_project_cache as epc
 import allensdk.brain_observatory.ecephys.write_nwb.__main__ as write_nwb
 from allensdk.brain_observatory.ecephys.ecephys_project_api.http_engine import (
-    write_bytes_from_coroutine, AsyncHttpEngine
+    write_from_stream, write_bytes_from_coroutine, AsyncHttpEngine
 )
 
 
@@ -109,12 +109,18 @@ def shared_tmpdir(tmpdir_factory):
     return str(tmpdir_factory.mktemp('test_ecephys_project_cache'))
 
 
+class MockEngine:
+    def __init__(self):
+        self.write_bytes = write_from_stream
+
+
 @pytest.fixture
 def mock_api(shared_tmpdir, raw_sessions, units, channels, raw_probes, analysis_metrics):
     class MockApi:
 
         def __init__(self, **kwargs):
             self.accesses = collections.defaultdict(lambda: 1)
+            self.rma_engine = MockEngine()
 
         def __getattr__(self, name):
             self.accesses[name] += 1
